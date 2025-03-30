@@ -4,29 +4,34 @@ import pandas as pd
 import json
 import datetime
 
-token = "lip_????"  # Ersetzen Sie dies durch Ihren Token
+token = "lip_?"  #  Token
 url = 'https://lichess.org/api/puzzle/activity'
 headers = {'Authorization': 'Bearer ' + token}
 myclient = lichess.Client(token=token)
 activity = myclient.get_puzzle_activity(max_entries=10)
-print(activity)
-puzzle_activity = requests.get(url, headers=headers)
-print(puzzle_activity.status_code)
-print(puzzle_activity.text[:200])
 
-puzzle_activity_list = puzzle_activity.text.split('\n')
-puzzle_activity_list = [item for item in puzzle_activity_list if item]
-print(puzzle_activity_list[0:5])
+puzzle_activity = requests.get(url, headers=headers, stream=True)
 
 puzzle_activity_dicts = []
+buffer = ""
 
-for item in puzzle_activity_list:
-    try:
-        puzzle_activity_dicts.append(json.loads(item))
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}, for item {item}")
-
-print(puzzle_activity_dicts[0:5])
+for line in puzzle_activity.iter_lines():  # decode_unicode entfernt
+    if line:
+        try:
+            line_str = line.decode('utf-8')  # Byte-Objekt in String umwandeln
+            buffer += line_str
+            try:
+                json_obj = json.loads(buffer)
+                puzzle_activity_dicts.append(json_obj)
+                print(f"Verarbeitetes JSON-Objekt: {json_obj}")
+                buffer = ""  # Buffer löschen, da ein JSON-Objekt verarbeitet wurde
+            except json.JSONDecodeError:
+                # Das ist kein vollständiges JSON-Objekt, mehr Daten erforderlich
+                pass
+            except Exception as e:
+                print(f"Error: {e}")
+        except Exception as e:
+            print(f"Error decoding line: {e}")
 
 puzzle_activity_df = pd.json_normalize(puzzle_activity_dicts)
 
