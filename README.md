@@ -23,6 +23,11 @@ This Python script retrieves puzzle activity data from Lichess using the Lichess
 
 Open in Google Colab: The easiest way to use this script is within Google Colab. Create a new Colab notebook and copy the Python code into a cell.
 
+## Install dependencies: In a local machine, run:
+pip install lichess
+pip install requests
+pip install pandas
+
 ## Install dependencies: In a Colab cell, run:
 
 Bash
