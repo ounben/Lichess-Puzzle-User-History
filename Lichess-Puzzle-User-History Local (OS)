@@ -1,0 +1,53 @@
+import lichess
+import requests
+import pandas as pd
+import json
+import datetime
+
+token = "lip_????"  # Ersetzen Sie dies durch Ihren Token
+url = 'https://lichess.org/api/puzzle/activity'
+headers = {'Authorization': 'Bearer ' + token}
+myclient = lichess.Client(token=token)
+activity = myclient.get_puzzle_activity(max_entries=10)
+print(activity)
+puzzle_activity = requests.get(url, headers=headers)
+print(puzzle_activity.status_code)
+print(puzzle_activity.text[:200])
+
+puzzle_activity_list = puzzle_activity.text.split('\n')
+puzzle_activity_list = [item for item in puzzle_activity_list if item]
+print(puzzle_activity_list[0:5])
+
+puzzle_activity_dicts = []
+
+for item in puzzle_activity_list:
+    try:
+        puzzle_activity_dicts.append(json.loads(item))
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}, for item {item}")
+
+print(puzzle_activity_dicts[0:5])
+
+puzzle_activity_df = pd.json_normalize(puzzle_activity_dicts)
+
+puzzle_activity_df.head()
+print(puzzle_activity_df.isna().sum(axis=0))
+
+new_dates = puzzle_activity_df['date'].map(lambda x: datetime.datetime.fromtimestamp(x / 1000))
+puzzle_activity_df['date'] = new_dates
+
+puzzle_activity_df.head()
+
+# Get the current date and time
+now = datetime.datetime.now()
+
+# Format the date as a string without hyphens
+date_string = now.strftime("%Y%m%d")
+
+# Create the file name with the date before the file name
+file_name = date_string + "_puzzle_activity_clean.csv"
+
+# Save the DataFrame to a CSV file with the new file name
+puzzle_activity_df.to_csv(file_name, index=True)
+
+print(f"Datei gespeichert als: {file_name}")
